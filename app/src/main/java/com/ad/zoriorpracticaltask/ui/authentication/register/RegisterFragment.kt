@@ -5,13 +5,14 @@ import android.app.Activity
 import android.app.DatePickerDialog
 import android.content.Intent
 import android.icu.util.Calendar
+import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.RadioButton
-import android.widget.Toast
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.navigation.Navigation
@@ -24,8 +25,7 @@ import com.ad.zoriorpracticaltask.databinding.FragmentRegisterBinding
 import com.ad.zoriorpracticaltask.ui.home.HomeActivity
 import com.ad.zoriorpracticaltask.ui.shared.BaseFragment
 import com.ad.zoriorpracticaltask.util.*
-import com.google.android.material.textfield.TextInputEditText
-import com.google.android.material.textfield.TextInputLayout
+import com.bumptech.glide.Glide
 import com.permissionx.guolindev.PermissionX
 import java.io.File
 import java.util.*
@@ -33,7 +33,7 @@ import java.util.*
 
 class RegisterFragment : BaseFragment<RegisterViewModel, FragmentRegisterBinding, AuthRepository>(),
     View.OnClickListener {
-    private var picturePath: File? = null
+    private var imgUri: Uri? = null
     private var age: String? = null
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
@@ -45,9 +45,14 @@ class RegisterFragment : BaseFragment<RegisterViewModel, FragmentRegisterBinding
                 btnRegister.visible(it !is ResultState.Loading)
                 when (it) {
                     is ResultState.Success -> {
-                        it.value.result?.user?.let {
-                            AppPreferences.saveUser(it)
-                            requireActivity().startNewActivity(HomeActivity::class.java)
+                        Log.d("TAG",it.value.result.toString())
+                        if (it.value.result?.user?.userId != null) {
+                            it.value.result?.user?.let { user ->
+                                AppPreferences.saveUser(user)
+                                requireActivity().startNewActivity(HomeActivity::class.java)
+                            }
+                        } else {
+                            root.snackBar(it.value.message.toString())
                         }
                     }
                     is ResultState.Failure -> {
@@ -68,23 +73,20 @@ class RegisterFragment : BaseFragment<RegisterViewModel, FragmentRegisterBinding
     }
 
     private fun FragmentRegisterBinding.register() {
-        if (picturePath == null) {
-            root.snackBar("Please select picture")
-            return
-        }
         if (!isValidate()) {
-            root.snackBar("Please fill the data first")
+            root.snackBar("Please fill a valid data")
             return
         }
 
-        val selectedId: Int = radioGroupGender.checkedRadioButtonId
+        val selectedGenderId: Int = radioGroupGender.checkedRadioButtonId
 
         val firstName = edtFirstName.text.toString()
         val lastName = edtLastName.text.toString()
         val email = edtEmail.text.toString()
         val password = edtPassword.text.toString()
-        val gender = view?.findViewById<RadioButton>(selectedId)?.text.toString()
+        val gender = view?.findViewById<RadioButton>(selectedGenderId)?.text.toString()
 
+        val img = imgUri?.let { requireContext().getRealPathFromURI(it) }?.let { File(it) }
 
         viewModel.register(
             firstName,
@@ -92,14 +94,14 @@ class RegisterFragment : BaseFragment<RegisterViewModel, FragmentRegisterBinding
             email,
             password,
             gender,
-            age.toString(),
-            picturePath!!
+            age,
+            img
         )
     }
 
 
     private fun pickImg() {
-        PermissionX.init(activity)
+        PermissionX.init(requireActivity())
             .permissions(
                 Manifest.permission.READ_EXTERNAL_STORAGE,
                 Manifest.permission.WRITE_EXTERNAL_STORAGE
@@ -111,49 +113,24 @@ class RegisterFragment : BaseFragment<RegisterViewModel, FragmentRegisterBinding
                     "OK",
                     "Cancel"
                 )
+            }.request { allGranted, grantedList, deniedList ->
+                if (allGranted || grantedList.isNotEmpty())
+                    createChooser()
             }
-            .request { allGranted, grantedList, deniedList ->
-                if (allGranted) {
+    }
 
-                    val i = Intent().also {
-                        it.type = "image/*"
-                        it.action = Intent.ACTION_GET_CONTENT
-                    }
-                    val pickIntent =
-                        Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
-                    pickIntent.type = "image/*"
-
-                    val chooserIntent = Intent.createChooser(i, "Select Image")
-                    chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, arrayOf(pickIntent))
-
-                    launchSomeActivity.launch(chooserIntent)
-
-                } else {
-                    Toast.makeText(
-                        context,
-                        "permissions required for perform this action",
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
-            }
+    private fun createChooser() {
+        val chooseIntent =
+            Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
+        launchSomeActivity.launch(chooseIntent)
     }
 
     private var launchSomeActivity =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult())
         { result: ActivityResult ->
             if (result.resultCode == Activity.RESULT_OK) {
-                val data = result.data
-
-                if (data != null && data.data != null) {
-                    requireActivity().contentResolver?.query(data.data!!, null, null, null, null)
-                        ?.use {
-                            if (it.moveToFirst()) {
-                                picturePath = File(
-                                    it.getString(it.getColumnIndex(MediaStore.MediaColumns.DATA))
-                                )
-                            }
-                        }
-                }
+                imgUri = result.data?.data
+                Glide.with(binding.imgProfile).load(imgUri).into(binding.imgProfile)
             }
         }
 
@@ -193,21 +170,11 @@ class RegisterFragment : BaseFragment<RegisterViewModel, FragmentRegisterBinding
         ) && validateInput(
             binding.edtEmail,
             binding.layoutEmail
-        ) && validateInput(binding.edtPassword, binding.layoutPassword)
+        ) && validateInput(
+            binding.edtPassword,
+            binding.layoutPassword
+        ) && emailValidation(binding.edtEmail.text.toString())
 
-    private fun validateInput(
-        edtFirstName: TextInputEditText,
-        layoutFirstName: TextInputLayout
-    ): Boolean {
-        if (edtFirstName.text.toString().trim().isEmpty()) {
-            layoutFirstName.error = "Required Field!"
-            edtFirstName.requestFocus()
-            return false
-        } else {
-            layoutFirstName.isErrorEnabled = false
-        }
-        return true
-    }
 
     override fun onClick(p0: View?) {
         p0?.let {

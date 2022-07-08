@@ -22,20 +22,11 @@ interface ApiService {
 
 
     @Multipart
+    @JvmSuppressWildcards
     @POST("userRegistration.php")
     suspend fun registration(
-        @Part("firstname") firstName: RequestBody,
-        @Part("lastname") lastname: RequestBody,
-        @Part("email") email: RequestBody,
-        @Part("password") password: RequestBody,
-        @Part("gender") gender: RequestBody,
-        @Part("age") age: RequestBody,
-        @Part("user_type") userType: RequestBody,
-        @Part("devicetoken") deviceToken: RequestBody,
-        @Part("devicetype") deviceType: RequestBody,
-        @Part("action") action: RequestBody,
-        @Part("data") data: RequestBody,
-        @Part photo: MultipartBody.Part
+        @PartMap params: Map<String, RequestBody>,
+        @Part img: MultipartBody.Part?
     ): UserResponse
 
 }

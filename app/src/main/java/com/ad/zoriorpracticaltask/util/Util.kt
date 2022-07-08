@@ -1,15 +1,20 @@
 package com.ad.zoriorpracticaltask.util
 
 import android.app.Activity
+import android.content.Context
+import android.content.CursorLoader
 import android.content.Intent
+import android.database.Cursor
 import android.icu.util.Calendar
-import android.util.Log
+import android.net.Uri
+import android.provider.MediaStore
 import android.view.View
 import androidx.fragment.app.Fragment
 import com.ad.zoriorpracticaltask.R
 import com.ad.zoriorpracticaltask.data.network.ResultState
 import com.ad.zoriorpracticaltask.ui.authentication.login.LoginFragment
 import com.google.android.material.snackbar.Snackbar
+
 
 fun <A : Activity> Activity.startNewActivity(activity: Class<A>) {
     Intent(this, activity).also {
@@ -41,14 +46,15 @@ fun View.snackBar(
 }
 
 fun setChecked(gender: String): Int {
-    return if (gender.lowercase() == "male") R.id.radioMale
-    else R.id.radioFemale
+    return if (gender.lowercase() == "female") R.id.radioFemale
+    else R.id.radioMale
 }
 
 fun Fragment.handleApiError(
     failure: ResultState.Failure,
     retry: (() -> Unit)? = null
 ) {
+
     when {
         failure.isNetworkError -> requireView().snackBar(
             "Please check your internet connection",
@@ -77,4 +83,15 @@ fun getAge(year: Int, month: Int, day: Int): String? {
     }
     val ageInt = age
     return ageInt.toString()
+}
+
+fun Context.getRealPathFromURI(contentUri: Uri): String? {
+    val proj = arrayOf(MediaStore.Images.Media.DATA)
+    val loader = CursorLoader(this, contentUri, proj, null, null, null)
+    val cursor: Cursor = loader.loadInBackground()
+    val column_index: Int = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA)
+    cursor.moveToFirst()
+    val result: String = cursor.getString(column_index)
+    cursor.close()
+    return result
 }

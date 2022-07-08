@@ -13,6 +13,7 @@ import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import java.io.File
 
+
 class RegisterViewModel(
     private val repository: AuthRepository
 ) : BaseViewModel(repository) {
@@ -22,38 +23,53 @@ class RegisterViewModel(
         get() = _registerResponse
 
     fun register(
-        firstName: String,
-        lastName: String,
-        email: String,
-        password: String,
-        gender: String,
-        age: String,
-        img: File
+        firstName: String?,
+        lastName: String?,
+        email: String?,
+        password: String?,
+        gender: String?,
+        age: String?,
+        img: File?
     ) = viewModelScope.launch {
+        val map: HashMap<String, RequestBody> = HashMap()
 
-        val requestBody = RequestBody.create("image/*".toMediaTypeOrNull(), img)
-        val filePart = MultipartBody.Part.createFormData(
-            "photo",
-            img.name,
-            requestBody
-        )
+        firstName?.let {
+            map.put("firstname", RequestBody.create(MultipartBody.FORM, it))
+        }
+        lastName?.let {
+            map.put("lastname", RequestBody.create(MultipartBody.FORM, it))
+        }
+        email?.let {
+            map.put("email", RequestBody.create(MultipartBody.FORM, it))
+        }
+        password?.let {
+            map.put("password", RequestBody.create(MultipartBody.FORM, it))
+        }
+        gender?.let {
+            map.put("gender", RequestBody.create(MultipartBody.FORM, it))
+        }
+        age?.let {
+            map.put("age", RequestBody.create(MultipartBody.FORM, it))
+        }
 
+        map.put("user_type", RequestBody.create(MultipartBody.FORM, "2"))
+        map.put("devicetoken", RequestBody.create(MultipartBody.FORM, "fsadgfergsdg"))
+        map.put("devicetype", RequestBody.create(MultipartBody.FORM, "Android"))
+        map.put("action", RequestBody.create(MultipartBody.FORM, "userRegistration"))
+        map.put("data", RequestBody.create(MultipartBody.FORM, "form-multi-part"))
+
+        var filePart: MultipartBody.Part? = null
+        img?.let {
+            val requestBody = RequestBody.create("image/*".toMediaTypeOrNull(), img)
+            filePart = MultipartBody.Part.createFormData(
+                "photo",
+                img.name,
+                requestBody
+            )
+        }
 
         _registerResponse.value = ResultState.Loading
-        _registerResponse.value = repository.registration(
-            firstName = RequestBody.create(MultipartBody.FORM, firstName),
-            lastname = RequestBody.create(MultipartBody.FORM, lastName),
-            email = RequestBody.create(MultipartBody.FORM, email),
-            password = RequestBody.create(MultipartBody.FORM, password),
-            gender = RequestBody.create(MultipartBody.FORM, gender),
-            age = RequestBody.create(MultipartBody.FORM, age),
-            userType = RequestBody.create(MultipartBody.FORM, "2"),
-            deviceToken = RequestBody.create(MultipartBody.FORM, "fsadgfergsdg"),
-            deviceType = RequestBody.create(MultipartBody.FORM, "Android"),
-            action = RequestBody.create(MultipartBody.FORM, "userRegistration"),
-            data = RequestBody.create(MultipartBody.FORM, "form-multi-part"),
-            photo = filePart,
-        )
+        _registerResponse.value = repository.registration(map, filePart)
     }
 
 }

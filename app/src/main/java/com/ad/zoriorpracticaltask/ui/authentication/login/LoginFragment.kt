@@ -64,12 +64,25 @@ class LoginFragment : BaseFragment<LoginViewModel, FragmentLoginBinding, AuthRep
     }
 
     private fun login() {
+        if (!isValidate()) {
+            binding.root.snackBar("Please fill a valid data")
+            return
+        }
+
         val email = binding.edtEmail.text.toString()
         val password = binding.edtPassword.text.toString()
 
         viewModel.login(email, password)
     }
 
+    private fun isValidate(): Boolean =
+        validateInput(
+            binding.edtEmail,
+            binding.layoutEmail
+        ) && validateInput(
+            binding.edtPassword,
+            binding.layoutPassword
+        ) && emailValidation(binding.edtEmail.text.toString())
 
     override fun onClick(p0: View?) {
         p0?.let {

@@ -13,33 +13,10 @@ class AuthRepository(
     }
 
     suspend fun registration(
-        firstName: RequestBody,
-        lastname: RequestBody,
-        email: RequestBody,
-        password: RequestBody,
-        gender: RequestBody,
-        age: RequestBody,
-        userType: RequestBody,
-        deviceToken: RequestBody,
-        deviceType: RequestBody,
-        action: RequestBody,
-        data: RequestBody,
-        photo: MultipartBody.Part
+        params: Map<String, RequestBody>,
+        img: MultipartBody.Part?
     ) = apiCall {
-        api.registration(
-            firstName,
-            lastname,
-            email,
-            password,
-            gender,
-            age,
-            userType,
-            deviceToken,
-            deviceType,
-            action,
-            data,
-            photo
-        )
+        api.registration(params, img)
     }
 
 }

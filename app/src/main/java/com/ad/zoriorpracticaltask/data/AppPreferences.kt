@@ -23,10 +23,10 @@ object AppPreferences {
         editor.apply()
     }
 
-    var userId: Int?
-        get() = preferences.getInt(USER_ID, 0)
+    var userId: String?
+        get() = preferences.getString(USER_ID, "0")
         set(value) = preferences.edit {
-            it.putInt(USER_ID, value ?: 0)
+            it.putString(USER_ID, value)
         }
 
 
@@ -41,7 +41,7 @@ object AppPreferences {
     }
 
     fun saveUser(user: User) {
-        userId = Integer.parseInt(user.userId ?: "0")
+        userId = user.userId ?: "0"
         token = user.activationToken
     }
 }
