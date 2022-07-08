@@ -1,0 +1,16 @@
+<resources>
+    <string name="app_name">ZoriorPracticalTask</string>
+    <string name="prompt_email">Email</string>
+    <string name="prompt_password">Password</string>
+    <string name="register">Register</string>
+    <string name="login">Login</string>
+    <string name="first_name">First Name</string>
+    <string name="last_name">Last Name</string>
+    <string name="female">Female</string>
+    <string name="male">Male</string>
+    <string name="birthdate">BirthDate</string>
+    <string name="cancel">Cancel</string>
+    <string name="age">age</string>
+    <string name="logout">Logout</string>
+    <string name="welcome">Welcome</string>
+</resources>
